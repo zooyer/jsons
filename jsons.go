@@ -1,6 +1,7 @@
 package jsons
 
 import (
+	"bytes"
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
@@ -32,8 +33,14 @@ func New(v interface{}) Value {
 		d, _ := json.Marshal(v)
 		_ = json.Unmarshal(d, &num)
 		val.Val = num
+	case json.Number:
+		val.Val = Number(v)
 	case string:
 		val.Val = String(v)
+	case []byte:
+		_ = json.Unmarshal(v, &val.Val)
+	case json.RawMessage:
+		val.Val = Raw(v)
 	case []interface{}:
 		val.Val = Array(v)
 	case map[string]interface{}:
@@ -52,6 +59,13 @@ func New(v interface{}) Value {
 	}
 
 	return val
+}
+
+func Unmarshal(data []byte) (val Value, err error) {
+	if err = json.Unmarshal(data, &val); err != nil {
+		return
+	}
+	return
 }
 
 // ******** implement sql interface **********
@@ -201,7 +215,9 @@ func (v Value) MarshalJSON() ([]byte, error) {
 
 func (v *Value) UnmarshalJSON(data []byte) error {
 	var err error
-	if err = json.Unmarshal(data, &v.Val); err != nil {
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.UseNumber()
+	if err = decoder.Decode(&v.Val); err != nil {
 		return err
 	}
 	v.Val = New(v.Val).Val
@@ -387,8 +403,8 @@ func (v Value) Exist(key string) bool {
 	return v.Object().Exist(key)
 }
 
-func (v Value) Get(key string) Value {
-	return v.Object().Get(key)
+func (v Value) Get(key ...string) Value {
+	return v.Object().Get(key...)
 }
 
 func (v Value) Map(fn func(key string, value Value) (continued bool)) bool {
@@ -459,13 +475,27 @@ func (o Object) Len() int {
 	return len(o)
 }
 
-func (o Object) Get(key string) Value {
+func (o Object) Get(key ...string) Value {
 	if len(o) > 0 {
-		if val, exist := o[key]; exist {
-			return New(val)
+		obj := o
+		var value Value
+		for _, k := range key {
+			if val, exist := obj[k]; exist {
+				value = New(val)
+			} else {
+				value = New(nil)
+			}
+			obj = value.Object()
 		}
+		return value
 	}
 	return New(nil)
+}
+
+func (o Object) Set(key string, val interface{}) {
+	if o != nil {
+		o[key] = New(val)
+	}
 }
 
 func (o Object) Delete(key string) {
