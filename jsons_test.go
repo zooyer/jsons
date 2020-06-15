@@ -69,4 +69,21 @@ func TestNew(t *testing.T) {
 	assert(val.String() == "")
 	assert(val.Array() == nil)
 	assert(val.Object() == nil)
+
+	val = New(Object{
+		"a": "aa",
+		"b": "bb",
+		"c": Object{
+			"d": Object{
+				"e": "ee",
+			},
+		},
+	})
+	assert(val.Exist("c", "d", "e"), "e must exist")
+	assert(!val.Exist("c", "d", "e", "f"), "f must not exist")
+	val.Delete("c", "d", "e")
+	assert(!val.Exist("c", "d", "e"), "e must not exist")
+	val.Get("c", "d").Set("e", "eee")
+	assert(val.Exist("c", "d", "e"), "e must exist")
+	assert(val.Get("c", "d", "e").ToString() == "eee", "must eee")
 }

@@ -399,20 +399,56 @@ func (v Value) Range(fn func(index int, value Value) (continued bool)) bool {
 	return v.Array().Range(fn)
 }
 
-func (v Value) Exist(key string) bool {
-	return v.Object().Exist(key)
+func (v Value) Exist(key ...string) bool {
+	return v.Object().Exist(key...)
+}
+
+func (v Value) SetIndex(index int, val interface{}) {
+	v.Array().Set(index, val)
+}
+
+func (v Value) Set(key string, val interface{}) {
+	v.Object().Set(key, val)
 }
 
 func (v Value) Get(key ...string) Value {
 	return v.Object().Get(key...)
 }
 
+func (v Value) GetInt(key ...string) int64 {
+	return v.Object().GetInt(key...)
+}
+
+func (v Value) GetFloat(key ...string) float64 {
+	return v.Object().GetFloat(key...)
+}
+
+func (v Value) GetBool(key ...string) bool {
+	return v.Object().GetBool(key...)
+}
+
+func (v Value) GetString(key ...string) string {
+	return v.Object().GetString(key...)
+}
+
+func (v Value) GetObject(key ...string) Object {
+	return v.Object().GetObject(key...)
+}
+
+func (v Value) GetArray(key ...string) Array {
+	return v.Object().GetArray(key...)
+}
+
+func (v Value) GetRaw(key ...string) Raw {
+	return v.Object().GetRaw(key...)
+}
+
 func (v Value) Map(fn func(key string, value Value) (continued bool)) bool {
 	return v.Object().Map(fn)
 }
 
-func (v Value) Delete(key string) {
-	v.Object().Delete(key)
+func (v Value) Delete(key ...string) {
+	v.Object().Delete(key...)
 }
 
 // ************ json raw function ************
@@ -447,6 +483,10 @@ func (a Array) Len() int {
 
 func (a Array) Cap() int {
 	return cap(a)
+}
+
+func (a Array) Set(index int, val interface{}) {
+	a[index] = New(val)
 }
 
 func (a Array) Index(index int) Value {
@@ -492,20 +532,62 @@ func (o Object) Get(key ...string) Value {
 	return New(nil)
 }
 
+func (o Object) GetInt(key ...string) int64 {
+	return o.Get(key...).ToInt()
+}
+
+func (o Object) GetFloat(key ...string) float64 {
+	return o.Get(key...).ToFloat()
+}
+
+func (o Object) GetBool(key ...string) bool {
+	return o.Get(key...).ToBool()
+}
+
+func (o Object) GetString(key ...string) string {
+	return o.Get(key...).ToString()
+}
+
+func (o Object) GetObject(key ...string) Object {
+	return o.Get(key...).ToObject()
+}
+
+func (o Object) GetArray(key ...string) Array {
+	return o.Get(key...).ToArray()
+}
+
+func (o Object) GetRaw(key ...string) Raw {
+	return o.Get(key...).ToRaw()
+}
+
 func (o Object) Set(key string, val interface{}) {
 	if o != nil {
 		o[key] = New(val)
 	}
 }
 
-func (o Object) Delete(key string) {
-	delete(o, key)
+func (o Object) Delete(key ...string) {
+	obj := o
+	for i, k := range key {
+		if i == len(key)-1 {
+			delete(obj, k)
+		} else {
+			obj = obj.Get(k).Object()
+		}
+	}
 }
 
-func (o Object) Exist(key string) bool {
-	if len(o) > 0 {
-		_, exist := o[key]
-		return exist
+func (o Object) Exist(key ...string) bool {
+	if len(o) > 0 && len(key) > 0 {
+		obj := o
+		for _, k := range key {
+			if _, exist := obj[k]; !exist {
+				return false
+			} else {
+				obj = obj.Get(k).Object()
+			}
+		}
+		return true
 	}
 	return false
 }
