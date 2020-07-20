@@ -83,6 +83,8 @@ func (r *Raw) Scan(v interface{}) error {
 	switch val := v.(type) {
 	case []byte:
 		return json.Unmarshal(val, r)
+	case string:
+		return json.Unmarshal([]byte(val), r)
 	}
 
 	return errors.New("invalid scan raw source")
@@ -100,6 +102,8 @@ func (b *Bool) Scan(v interface{}) error {
 	switch val := v.(type) {
 	case []byte:
 		return json.Unmarshal(val, b)
+	case string:
+		return json.Unmarshal([]byte(val), b)
 	}
 
 	return errors.New("invalid scan bool source")
@@ -117,6 +121,8 @@ func (n *Number) Scan(v interface{}) error {
 	switch val := v.(type) {
 	case []byte:
 		return json.Unmarshal(val, n)
+	case string:
+		return json.Unmarshal([]byte(val), n)
 	}
 
 	return errors.New("invalid scan number source")
@@ -134,6 +140,8 @@ func (s *String) Scan(v interface{}) error {
 	switch val := v.(type) {
 	case []byte:
 		return json.Unmarshal(val, s)
+	case string:
+		return json.Unmarshal([]byte(val), s)
 	}
 
 	return errors.New("invalid scan string source")
@@ -151,6 +159,8 @@ func (a *Array) Scan(v interface{}) error {
 	switch val := v.(type) {
 	case []byte:
 		return json.Unmarshal(val, a)
+	case string:
+		return json.Unmarshal([]byte(val), a)
 	}
 
 	return errors.New("invalid scan array source")
@@ -168,6 +178,8 @@ func (o *Object) Scan(v interface{}) error {
 	switch val := v.(type) {
 	case []byte:
 		return json.Unmarshal(val, o)
+	case string:
+		return json.Unmarshal([]byte(val), o)
 	}
 
 	return errors.New("invalid scan object source")
@@ -186,6 +198,8 @@ func (v *Value) Scan(val interface{}) error {
 	switch val := val.(type) {
 	case []byte:
 		return v.UnmarshalJSON(val)
+	case string:
+		return v.UnmarshalJSON([]byte(val))
 	}
 
 	return errors.New("invalid scan json source")
