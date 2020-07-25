@@ -50,18 +50,18 @@ func TestNew(t *testing.T) {
 	assert(val.Object().Get("not exist key").Array() == nil)
 	assert(val.Object().Get("not exist key").Object() == nil)
 
-	assert(val.Object().Get("not exist key").Array().Index(99999).Raw() == nil)
+	assert(val.Object().Get("not exist key").Array().Get(99999).Raw() == nil)
 	assert(val.Object().Get("not exist key").Object().Get("not exist key").Raw() == nil)
 
-	assert(val.Array().Index(99999).Raw() == nil)
-	assert(val.Array().Index(99999).Bool() == false)
-	assert(val.Array().Index(99999).Number() == "0")
-	assert(val.Array().Index(99999).String() == "")
-	assert(val.Array().Index(99999).Array() == nil)
-	assert(val.Array().Index(99999).Object() == nil)
+	assert(val.Array().Get(99999).Raw() == nil)
+	assert(val.Array().Get(99999).Bool() == false)
+	assert(val.Array().Get(99999).Number() == "0")
+	assert(val.Array().Get(99999).String() == "")
+	assert(val.Array().Get(99999).Array() == nil)
+	assert(val.Array().Get(99999).Object() == nil)
 
-	assert(val.Array().Index(99999).Array().Index(99999).Raw() == nil)
-	assert(val.Array().Index(99999).Object().Get("not exist key").Raw() == nil)
+	assert(val.Array().Get(99999).Array().Get(99999).Raw() == nil)
+	assert(val.Array().Get(99999).Object().Get("not exist key").Raw() == nil)
 
 	assert(val.Raw() == nil)
 	assert(val.Bool() == false)

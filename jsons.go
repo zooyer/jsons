@@ -5,6 +5,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
+	"sort"
 )
 
 type (
@@ -59,6 +60,14 @@ func New(v interface{}) Value {
 	}
 
 	return val
+}
+
+func Marshal(v interface{}) ([]byte, error) {
+	return json.Marshal(v)
+}
+
+func MarshalIdent(v interface{}, prefix, indent string) ([]byte, error) {
+	return json.MarshalIndent(v, prefix, indent)
 }
 
 func Unmarshal(data []byte) (val Value, err error) {
@@ -405,12 +414,22 @@ func (v Value) Slice(begin, end int) Array {
 	return v.Array().Slice(begin, end)
 }
 
-func (v Value) Index(index int) Value {
-	return v.Array().Index(index)
+func (v Value) Index(value interface{}) int {
+	return v.Array().Index(value)
 }
 
-func (v Value) Range(fn func(index int, value Value) (continued bool)) bool {
-	return v.Array().Range(fn)
+func (v Value) Range(fn func(key interface{}, value Value) (continued bool)) bool {
+	switch {
+	case v.IsArray():
+		return v.Array().Range(func(index int, value Value) (continued bool) {
+			return fn(index, value)
+		})
+	case v.IsObject():
+		return v.Object().Range(func(key string, value Value) (continued bool) {
+			return fn(key, value)
+		})
+	}
+	return false
 }
 
 func (v Value) Exist(key ...string) bool {
@@ -419,6 +438,10 @@ func (v Value) Exist(key ...string) bool {
 
 func (v Value) SetIndex(index int, val interface{}) {
 	v.Array().Set(index, val)
+}
+
+func (v Value) GetIndex(index int) Value {
+	return v.Array().Get(index)
 }
 
 func (v Value) Set(key string, val interface{}) {
@@ -455,10 +478,6 @@ func (v Value) GetArray(key ...string) Array {
 
 func (v Value) GetRaw(key ...string) Raw {
 	return v.Object().GetRaw(key...)
-}
-
-func (v Value) Map(fn func(key string, value Value) (continued bool)) bool {
-	return v.Object().Map(fn)
 }
 
 func (v Value) Delete(key ...string) {
@@ -503,15 +522,33 @@ func (a Array) Set(index int, val interface{}) {
 	a[index] = New(val)
 }
 
-func (a Array) Index(index int) Value {
+func (a Array) Get(index int) Value {
 	if index < len(a) {
 		return New(a[index])
 	}
 	return New(nil)
 }
 
+func (a Array) Index(value interface{}) int {
+	for i, v := range a {
+		if v == value {
+			return i
+		}
+	}
+
+	return -1
+}
+
+func (a Array) Contains(value interface{}) bool {
+	return a.Index(value) >= 0
+}
+
 func (a Array) Slice(begin, end int) Array {
 	return a[begin:end]
+}
+
+func (a Array) Append(arr Array) Array {
+	return append(a, arr...)
 }
 
 func (a Array) Range(fn func(index int, value Value) (continued bool)) bool {
@@ -521,12 +558,39 @@ func (a Array) Range(fn func(index int, value Value) (continued bool)) bool {
 		}
 	}
 	return true
+
+}
+
+func (a Array) Reverse() Array {
+	for b, e := 0, len(a)-1; b < e; b, e = b+1, e-1 {
+		a[b], a[e] = a[e], a[b]
+	}
+	return a
+}
+
+func (a Array) Sort(less func(i, j int) bool) Array {
+	sort.Slice(a, less)
+	return a
 }
 
 // ************ json object function ************
 
 func (o Object) Len() int {
 	return len(o)
+}
+
+func (o Object) Keys() []string {
+	var keys = make([]string, len(o))
+	for key, _ := range o {
+		keys = append(keys, key)
+	}
+	return keys
+}
+
+func (o Object) Set(key string, val interface{}) {
+	if o != nil {
+		o[key] = New(val)
+	}
 }
 
 func (o Object) Get(key ...string) Value {
@@ -574,12 +638,6 @@ func (o Object) GetRaw(key ...string) Raw {
 	return o.Get(key...).ToRaw()
 }
 
-func (o Object) Set(key string, val interface{}) {
-	if o != nil {
-		o[key] = New(val)
-	}
-}
-
 func (o Object) Delete(key ...string) {
 	obj := o
 	for i, k := range key {
@@ -606,7 +664,7 @@ func (o Object) Exist(key ...string) bool {
 	return false
 }
 
-func (o Object) Map(fn func(key string, value Value) (continued bool)) bool {
+func (o Object) Range(fn func(key string, value Value) (continued bool)) bool {
 	for key, value := range o {
 		if !fn(key, New(value)) {
 			return false
