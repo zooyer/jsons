@@ -5,6 +5,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"sort"
 )
 
@@ -279,8 +280,11 @@ func (v Value) JSONString() string {
 }
 
 func (v Value) Raw() Raw {
-	if r, ok := v.Val.(Raw); ok {
-		return r
+	switch val := v.Val.(type) {
+	case Raw:
+		return val
+	case []byte:
+		return val
 	}
 	if raw, err := v.MarshalJSON(); err == nil {
 		return raw
@@ -289,76 +293,125 @@ func (v Value) Raw() Raw {
 }
 
 func (v Value) Bool() Bool {
-	if b, ok := v.Val.(Bool); ok {
-		return b
+	switch val := v.Val.(type) {
+	case Bool:
+		return val
+	case bool:
+		return Bool(val)
 	}
 	return false
 }
 
 func (v Value) Number() Number {
-	if n, ok := v.Val.(Number); ok {
-		return n
+	switch val := v.Val.(type) {
+	case Number:
+		return val
+	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64:
+		return Number(fmt.Sprint(val))
 	}
 	return "0"
 }
 
 func (v Value) String() String {
-	if s, ok := v.Val.(String); ok {
-		return s
+	switch val := v.Val.(type) {
+	case String:
+		return val
+	case string:
+		return String(val)
+	case []byte:
+		return String(val)
 	}
 	return ""
 }
 
 func (v Value) Array() Array {
-	if a, ok := v.Val.(Array); ok {
-		return a
+	switch val := v.Val.(type) {
+	case Array:
+		return val
+	case []interface{}:
+		return val
 	}
 	return nil
 }
 
 func (v Value) Object() Object {
-	if o, ok := v.Val.(Object); ok {
-		return o
+	switch val := v.Val.(type) {
+	case Object:
+		return val
+	case map[string]interface{}:
+		return val
 	}
 	return nil
 }
 
 func (v Value) IsNull() bool {
-	if v.IsRaw() {
-		return v.Raw().IsNull()
+	switch val := v.Val.(type) {
+	case nil:
+		return true
+	case []byte:
+		return string(val) == "" || string(val) == "null"
+	case []interface{}:
+		return val == nil
+	case map[string]interface{}:
+		return val == nil
+	case Number:
+		return val == ""
+	case Raw:
+		return string(val) == "" || string(val) == "null"
+	case Array:
+		return val == nil
+	case Object:
+		return val == nil
 	}
-
-	return false
+	return v.Val == nil
 }
 
 func (v Value) IsRaw() bool {
-	_, ok := v.Val.(Raw)
-	return ok
+	switch v.Val.(type) {
+	case Raw, []byte:
+		return true
+	}
+	return false
 }
 
 func (v Value) IsBool() bool {
-	_, ok := v.Val.(Bool)
-	return ok
+	switch v.Val.(type) {
+	case Bool, bool:
+		return true
+	}
+	return false
 }
 
 func (v Value) IsNumber() bool {
-	_, ok := v.Val.(Number)
-	return ok
+	switch v.Val.(type) {
+	case Number, int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64:
+		return true
+	}
+	return false
 }
 
 func (v Value) IsString() bool {
-	_, ok := v.Val.(String)
-	return ok
+	switch v.Val.(type) {
+	case String, string:
+		return true
+	}
+	return false
 }
 
 func (v Value) IsArray() bool {
-	_, ok := v.Val.(Array)
-	return ok
+	switch v.Val.(type) {
+	case Array, []interface{}:
+		return true
+	}
+	return false
 }
 
 func (v Value) IsObject() bool {
-	_, ok := v.Val.(Object)
-	return ok
+	switch v.Val.(type) {
+	case Object, map[string]interface{}:
+		return true
+	}
+	return false
 }
 
 func (v Value) ToRaw() []byte {
@@ -392,13 +445,23 @@ func (v Value) ToObject() map[string]interface{} {
 }
 
 func (v Value) Len() int {
-	switch v.Val.(type) {
-	case Array:
-		return v.Array().Len()
-	case Object:
-		return v.Object().Len()
+	switch val := v.Val.(type) {
+	case []byte:
+		return len(val)
+	case string:
+		return len(val)
+	case []interface{}:
+		return len(val)
+	case map[string]interface{}:
+		return len(val)
+	case Raw:
+		return len(val)
 	case String:
-		return len(v.String())
+		return len(val)
+	case Array:
+		return val.Len()
+	case Object:
+		return val.Len()
 	}
 	return 0
 }
@@ -408,14 +471,6 @@ func (v Value) Cap() int {
 		return v.Array().Cap()
 	}
 	return 0
-}
-
-func (v Value) Slice(begin, end int) Array {
-	return v.Array().Slice(begin, end)
-}
-
-func (v Value) Index(value interface{}) int {
-	return v.Array().Index(value)
 }
 
 func (v Value) Range(fn func(key interface{}, value Value) (continued bool)) bool {
@@ -432,8 +487,28 @@ func (v Value) Range(fn func(key interface{}, value Value) (continued bool)) boo
 	return false
 }
 
-func (v Value) Exist(key ...string) bool {
-	return v.Object().Exist(key...)
+func (v Value) Slice(begin, end int) Array {
+	return v.Array().Slice(begin, end)
+}
+
+func (v Value) Index(value interface{}) int {
+	return v.Array().Index(value)
+}
+
+func (v Value) Append(arr Array) Array {
+	return v.Array().Append(arr)
+}
+
+func (v Value) Contains(value interface{}) bool {
+	return v.Array().Contains(value)
+}
+
+func (v Value) Reverse() Array {
+	return v.Array().Reverse()
+}
+
+func (v Value) Sort(less func(i, j int) bool) Array {
+	return v.Array().Sort(less)
 }
 
 func (v Value) SetIndex(index int, val interface{}) {
@@ -442,6 +517,14 @@ func (v Value) SetIndex(index int, val interface{}) {
 
 func (v Value) GetIndex(index int) Value {
 	return v.Array().Get(index)
+}
+
+func (v Value) Keys() []string {
+	return v.Object().Keys()
+}
+
+func (v Value) Exist(key ...string) bool {
+	return v.Object().Exist(key...)
 }
 
 func (v Value) Set(key string, val interface{}) {
