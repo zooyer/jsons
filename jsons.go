@@ -567,6 +567,21 @@ func (v Value) Delete(key ...string) {
 	v.Object().Delete(key...)
 }
 
+func (v Value) Clone() Value {
+	var value Value
+	v.Marshal(&value)
+	return value
+	switch {
+	case v.IsRaw():
+		return New(v.Raw().Clone())
+	case v.IsArray():
+		return New(v.Array().Clone())
+	case v.IsObject():
+		return New(v.Object().Clone())
+	}
+	return New(v.Val)
+}
+
 // ************ json raw function ************
 
 func (r Raw) IsNull() bool {
@@ -575,6 +590,13 @@ func (r Raw) IsNull() bool {
 	}
 
 	return false
+}
+
+func (r Raw) Clone() Raw {
+	if r == nil {
+		return nil
+	}
+	return append(Raw{}, r...)
 }
 
 // ************ json number function ************
@@ -649,6 +671,13 @@ func (a Array) Reverse() Array {
 		a[b], a[e] = a[e], a[b]
 	}
 	return a
+}
+
+func (a Array) Clone() Array {
+	if a == nil {
+		return nil
+	}
+	return append(Array{}, a...)
 }
 
 func (a Array) Sort(less func(i, j int) bool) Array {
@@ -754,4 +783,10 @@ func (o Object) Range(fn func(key string, value Value) (continued bool)) bool {
 		}
 	}
 	return true
+}
+
+func (o Object) Clone() Object {
+	var object = make(Object)
+	New(o).Marshal(&object)
+	return object
 }
