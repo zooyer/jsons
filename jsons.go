@@ -414,6 +414,25 @@ func (v Value) IsObject() bool {
 	return false
 }
 
+func (v Value) Type() string {
+	switch {
+	case v.IsObject():
+		return "object"
+	case v.IsArray():
+		return "array"
+	case v.IsString():
+		return "string"
+	case v.IsNumber():
+		return "number"
+	case v.IsBool():
+		return "bool"
+	case v.IsNull():
+		return "null"
+	}
+
+	return "undefined"
+}
+
 func (v Value) ToRaw() []byte {
 	return v.Raw()
 }
