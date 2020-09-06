@@ -40,7 +40,9 @@ func New(v interface{}) Value {
 	case string:
 		val.Val = String(v)
 	case []byte:
-		_ = json.Unmarshal(v, &val.Val)
+		decoder := json.NewDecoder(bytes.NewReader(v))
+		decoder.UseNumber()
+		decoder.Decode(&val.Val)
 	case json.RawMessage:
 		val.Val = Raw(v)
 	case []interface{}:
@@ -441,6 +443,10 @@ func (v Value) ToBool() bool {
 	return bool(v.Bool())
 }
 
+func (v Value) ToNumber() json.Number {
+	return json.Number(v.Number())
+}
+
 func (v Value) ToFloat() float64 {
 	f64, _ := v.Number().Float64()
 	return f64
@@ -560,6 +566,10 @@ func (v Value) GetInt(key ...string) int64 {
 
 func (v Value) GetFloat(key ...string) float64 {
 	return v.Object().GetFloat(key...)
+}
+
+func (v Value) GetNumber(key ...string) json.Number {
+	return v.Object().GetNumber(key...)
 }
 
 func (v Value) GetBool(key ...string) bool {
@@ -747,6 +757,10 @@ func (o Object) GetInt(key ...string) int64 {
 
 func (o Object) GetFloat(key ...string) float64 {
 	return o.Get(key...).ToFloat()
+}
+
+func (o Object) GetNumber(key ...string) json.Number {
+	return o.Get(key...).ToNumber()
 }
 
 func (o Object) GetBool(key ...string) bool {
