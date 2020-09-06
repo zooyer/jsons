@@ -328,6 +328,10 @@ func (v Value) Get(keys ...interface{}) (val Value) {
 		return v.Array().Get(keys...)
 	case Object:
 		return v.Object().Get(keys...)
+	case []interface{}:
+		return Array(value).Get(keys...)
+	case map[string]interface{}:
+		return Object(value).Get(keys...)
 	}
 	return
 }
@@ -343,6 +347,10 @@ func (v Value) Set(keys ...interface{}) {
 		value.Set(keys...)
 	case Object:
 		value.Set(keys...)
+	case []interface{}:
+		Array(value).Set(keys...)
+	case map[string]interface{}:
+		Object(value).Set(keys...)
 	}
 }
 
@@ -373,7 +381,7 @@ func (v Value) Number(keys ...interface{}) Number {
 		data, _ := json.Marshal(value)
 		return Number(data)
 	}
-	return "0"
+	return ""
 }
 
 func (v Value) Bool(keys ...interface{}) bool {

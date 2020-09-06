@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestNew(t *testing.T) {
+func Test(t *testing.T) {
 	assert := func(expression bool, msg ...interface{}) {
 		if !expression {
 			t.Fatal(msg...)
@@ -78,19 +78,19 @@ func TestNew(t *testing.T) {
 
 	val = value(nil)
 	assert(val.Object().Get("not exist key").Bool() == false)
-	assert(val.Object().Get("not exist key").Number() == "0")
+	assert(val.Object().Get("not exist key").Number() == "")
 	assert(val.Object().Get("not exist key").String() == "")
 	assert(val.Object().Get("not exist key").Array() == nil)
 	assert(val.Object().Get("not exist key").Object() == nil)
 
 	assert(val.Array().Get(99999).Bool() == false)
-	assert(val.Array().Get(99999).Number() == "0")
+	assert(val.Array().Get(99999).Number() == "")
 	assert(val.Array().Get(99999).String() == "")
 	assert(val.Array().Get(99999).Array() == nil)
 	assert(val.Array().Get(99999).Object() == nil)
 
 	assert(val.Bool() == false)
-	assert(val.Number() == "0")
+	assert(val.Number() == "")
 	assert(val.String() == "")
 	assert(val.Array() == nil)
 	assert(val.Object() == nil)
