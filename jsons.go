@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strconv"
 )
 
 type (
@@ -280,78 +281,79 @@ func (v *Value) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// ************ json raw function ************
+
+func (r Raw) IsNull() bool {
+	if r == nil || string(r) == "null" {
+		return true
+	}
+	return false
+}
+
+func (r Raw) Clone() Raw {
+	if r == nil {
+		return nil
+	}
+	return append(Raw{}, r...)
+}
+
+// ************ json number function ************
+
+func (n Number) Float64() (float64, error) {
+	return json.Number(n).Float64()
+}
+
+func (n Number) Int64() (int64, error) {
+	return json.Number(n).Int64()
+}
+
+func (n Number) Uint64() (uint64, error) {
+	return strconv.ParseUint(string(n), 10, 64)
+}
+
+func (n Number) String() string {
+	return json.Number(n).String()
+}
+
 // ************* json value function ***************
-
-func (v Value) Marshal(obj interface{}) error {
-	data, err := v.MarshalJSON()
-	if err != nil {
-		return err
-	}
-	return json.Unmarshal(data, obj)
-}
-
-func (v *Value) Unmarshal(obj interface{}) error {
-	data, err := json.Marshal(obj)
-	if err != nil {
-		return err
-	}
-
-	return v.UnmarshalJSON(data)
-}
 
 func (v Value) Get(keys ...interface{}) (val Value) {
 	if len(keys) == 0 {
 		return v
 	}
-
-	var current = v
-	for i, k := range keys {
-		switch kk := k.(type) {
-		case int:
-			if !current.IsArray() {
-				return
-			}
-			current = current.Array().Get(kk)
-		case string:
-			if !current.IsObject() {
-				return
-			}
-			return current.Object().Get(keys[i:]...)
-		}
+	switch value := v.value.(type) {
+	case Value:
+		return value.Get(keys...)
+	case Array:
+		return v.Array().Get(keys...)
+	case Object:
+		return v.Object().Get(keys...)
 	}
-
 	return
 }
 
 func (v Value) Set(keys ...interface{}) {
-	if length := len(keys); length > 1 {
-		var val = keys[length-1]
-		switch key := keys[length-2].(type) {
-		case int:
-			switch value := v.Get(keys[:length-2]...).value.(type) {
-			case Value:
-				value.Set(key, val)
-			case Array:
-				value.Set(key, val)
-			case []interface{}:
-				Array(value).Set(key, val)
-			}
-		case string:
-			switch value := v.Get(keys[:length-2]...).value.(type) {
-			case Value:
-				value.Set(key, val)
-			case Object:
-				value.Set(key, val)
-			case map[string]interface{}:
-				Object(value).Set(key, val)
-			}
-		}
+	if len(keys) == 0 {
+		return
+	}
+	switch value := v.value.(type) {
+	case Value:
+		value.Set(keys...)
+	case Array:
+		value.Set(keys...)
+	case Object:
+		value.Set(keys...)
 	}
 }
 
 func (v Value) Int(keys ...interface{}) int64 {
 	i, _ := v.Number(keys...).Int64()
 	return i
+}
+
+func (v Value) Uint(keys ...interface{}) uint64 {
+	u, _ := v.Number(keys...).Uint64()
+	return u
 }
 
 func (v Value) Float(keys ...interface{}) float64 {
@@ -365,8 +367,11 @@ func (v Value) Number(keys ...interface{}) Number {
 		return value.Number()
 	case Number:
 		return value
+	case json.Number:
+		return Number(value)
 	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64:
-		return Number(fmt.Sprint(value))
+		data, _ := json.Marshal(value)
+		return Number(data)
 	}
 	return "0"
 }
@@ -375,10 +380,10 @@ func (v Value) Bool(keys ...interface{}) bool {
 	switch value := v.Get(keys...).value.(type) {
 	case Value:
 		return value.Bool()
-	case bool:
-		return value
 	case Bool:
 		return bool(value)
+	case bool:
+		return value
 	}
 	return false
 }
@@ -387,11 +392,11 @@ func (v Value) String(keys ...interface{}) string {
 	switch value := v.Get(keys...).value.(type) {
 	case Value:
 		return value.String()
-	case []byte:
+	case String:
 		return string(value)
 	case string:
 		return value
-	case String:
+	case []byte:
 		return string(value)
 	}
 	return ""
@@ -401,9 +406,9 @@ func (v Value) Array(keys ...interface{}) Array {
 	switch value := v.Get(keys...).value.(type) {
 	case Value:
 		return value.Array()
-	case []interface{}:
-		return value
 	case Array:
+		return value
+	case []interface{}:
 		return value
 	}
 	return nil
@@ -413,9 +418,9 @@ func (v Value) Object(keys ...interface{}) Object {
 	switch value := v.Get(keys...).value.(type) {
 	case Value:
 		return value.Object()
-	case map[string]interface{}:
-		return value
 	case Object:
+		return value
+	case map[string]interface{}:
 		return value
 	}
 	return nil
@@ -434,22 +439,23 @@ func (v Value) IsNull(keys ...interface{}) bool {
 	switch value := v.Get(keys...).value.(type) {
 	case Value:
 		return value.IsNull()
-	case nil:
-		return true
-	case []byte:
-		return string(value) == "" || string(value) == "null"
-	case []interface{}:
-		return value == nil
-	case map[string]interface{}:
-		return value == nil
 	case Number:
 		return value == ""
 	case Array:
 		return value == nil
 	case Object:
 		return value == nil
+	case nil:
+		return true
+	case []byte:
+		return len(value) == 0 || string(value) == "null"
+	case []interface{}:
+		return value == nil
+	case map[string]interface{}:
+		return value == nil
+	default:
+		return value == nil
 	}
-	return v.Get(keys...).value == nil
 }
 
 func (v Value) IsBool(keys ...interface{}) bool {
@@ -504,7 +510,6 @@ func (v Value) IsObject(keys ...interface{}) bool {
 
 func (v Value) Type(keys ...interface{}) string {
 	var value = v.Get(keys...)
-
 	switch {
 	case value.IsObject():
 		return "object"
@@ -519,12 +524,19 @@ func (v Value) Type(keys ...interface{}) string {
 	case value.IsNull():
 		return "null"
 	}
-
 	return "undefined"
 }
 
 func (v Value) Len(keys ...interface{}) int {
 	switch value := v.Get(keys...).value.(type) {
+	case Value:
+		return value.Len()
+	case Array:
+		return value.Len()
+	case Object:
+		return value.Len()
+	case String:
+		return len(value)
 	case []byte:
 		return len(value)
 	case string:
@@ -533,14 +545,6 @@ func (v Value) Len(keys ...interface{}) int {
 		return len(value)
 	case map[string]interface{}:
 		return len(value)
-	case String:
-		return len(value)
-	case Array:
-		return value.Len()
-	case Object:
-		return value.Len()
-	case Value:
-		return value.Len()
 	}
 	return 0
 }
@@ -552,7 +556,7 @@ func (v Value) Cap(keys ...interface{}) int {
 	case Array:
 		return value.Cap()
 	case []interface{}:
-		return len(value)
+		return cap(value)
 	}
 	return 0
 }
@@ -587,8 +591,8 @@ func (v Value) Contains(value interface{}) bool {
 	return v.Array().Contains(value)
 }
 
-func (v Value) Reverse() Array {
-	return v.Array().Reverse()
+func (v Value) Reverse(keys ...interface{}) Array {
+	return v.Array(keys...).Reverse()
 }
 
 func (v Value) Sort(less func(i, j int) bool) Array {
@@ -637,55 +641,122 @@ func (v Value) JSONString(keys ...interface{}) string {
 	return string(v.JSON(keys...))
 }
 
-// ************ json raw function ************
-
-func (r Raw) IsNull() bool {
-	if r == nil || string(r) == "null" {
-		return true
+func (v Value) Marshal(obj interface{}) error {
+	data, err := v.MarshalJSON()
+	if err != nil {
+		return err
 	}
-	return false
+	return json.Unmarshal(data, obj)
 }
 
-func (r Raw) Clone() Raw {
-	if r == nil {
-		return nil
+func (v *Value) Unmarshal(obj interface{}) error {
+	data, err := json.Marshal(obj)
+	if err != nil {
+		return err
 	}
-	return append(Raw{}, r...)
-}
 
-// ************ json number function ************
-
-func (n Number) Float64() (float64, error) {
-	return json.Number(n).Float64()
-}
-
-func (n Number) Int64() (int64, error) {
-	return json.Number(n).Int64()
-}
-
-func (n Number) String() string {
-	return json.Number(n).String()
+	return v.UnmarshalJSON(data)
 }
 
 // ************ json array function *************
 
-func (a Array) Len() int {
-	return len(a)
+func (a Array) Len(keys ...interface{}) int {
+	switch len(keys) {
+	case 0:
+		return len(a)
+	default:
+		return a.Get(keys...).Len()
+	}
 }
 
-func (a Array) Cap() int {
-	return cap(a)
+func (a Array) Cap(keys ...interface{}) int {
+	switch len(keys) {
+	case 0:
+		return cap(a)
+	default:
+		return a.Get(keys...).Cap()
+	}
 }
 
-func (a Array) Set(index int, val interface{}) {
-	a[index] = value(val)
+func (a Array) Set(keys ...interface{}) {
+	if length := len(keys); length > 1 {
+		key := keys[length-2]
+		val := value(keys[length-1])
+		switch value := a.Get(keys[:length-2]...).value.(type) {
+		case Value:
+			value.Set(key, val)
+		case Object:
+			value.Set(key, val)
+		case Array:
+			if index, ok := key.(int); ok && index < len(value) {
+				value[index] = val
+			}
+		}
+	}
 }
 
-func (a Array) Get(index int) (val Value) {
-	if index < len(a) {
-		return value(a[index])
+func (a Array) Get(keys ...interface{}) (val Value) {
+	if a == nil {
+		return
+	}
+	switch len(keys) {
+	case 0:
+		return value(a)
+	case 1:
+		if key, ok := keys[0].(int); ok && key < len(a) {
+			return value(a[key])
+		}
+	default:
+		var v = value(a)
+		for _, k := range keys {
+			switch key := k.(type) {
+			case int:
+				v = v.Array().Get(key)
+			case string:
+				v = v.Object().Get(key)
+			}
+		}
+		return v
 	}
 	return
+}
+
+func (a Array) Reverse(keys ...interface{}) Array {
+	switch len(keys) {
+	case 0:
+		for b, e := 0, len(a)-1; b < e; b, e = b+1, e-1 {
+			a[b], a[e] = a[e], a[b]
+		}
+		return a
+	default:
+		return a.Get(keys...).Reverse()
+	}
+}
+
+func (a Array) Clone(keys ...interface{}) Value {
+	switch len(keys) {
+	case 0:
+		var array = make(Array, len(a), cap(a))
+		data, _ := json.Marshal(a)
+		_ = json.Unmarshal(data, &array)
+		return value(array)
+	default:
+		return a.Get(keys...).Clone()
+	}
+}
+
+func (a Array) Range(fn func(index int, value Value) (continued bool)) bool {
+	for index, val := range a {
+		if !fn(index, value(val)) {
+			return false
+		}
+	}
+	return true
+}
+
+func (a Array) Sort(less func(i, j int) bool) Array {
+	sort.Slice(a, less)
+	return a
 }
 
 func (a Array) Index(value interface{}) int {
@@ -707,34 +778,6 @@ func (a Array) Slice(begin, end int) Array {
 
 func (a Array) Append(arr Array) Array {
 	return append(a, arr...)
-}
-
-func (a Array) Range(fn func(index int, value Value) (continued bool)) bool {
-	for index, val := range a {
-		if !fn(index, value(val)) {
-			return false
-		}
-	}
-	return true
-}
-
-func (a Array) Reverse() Array {
-	for b, e := 0, len(a)-1; b < e; b, e = b+1, e-1 {
-		a[b], a[e] = a[e], a[b]
-	}
-	return a
-}
-
-func (a Array) Clone() Array {
-	var array = make(Array, len(a), cap(a))
-	data, _ := json.Marshal(a)
-	_ = json.Unmarshal(data, &array)
-	return array
-}
-
-func (a Array) Sort(less func(i, j int) bool) Array {
-	sort.Slice(a, less)
-	return a
 }
 
 // ************ json object function ************
@@ -769,33 +812,16 @@ func (o Object) Get(keys ...interface{}) (val Value) {
 
 func (o Object) Set(keys ...interface{}) {
 	if length := len(keys); length > 1 {
+		key := keys[length-2]
 		val := value(keys[length-1])
-		switch key := keys[length-2].(type) {
-		case int:
-			switch value := o.Get(keys[:length-2]...).value.(type) {
-			case Value:
-				value.Set(key, val)
-			case Array:
-				if key < len(value) {
-					value[key] = val
-				}
-			case []interface{}:
-				if key < len(value) {
-					value[key] = val
-				}
-			}
-		case string:
-			switch value := o.Get(keys[:length-2]...).value.(type) {
-			case Value:
-				value.Set(key, val)
-			case Object:
-				if value != nil {
-					value[key] = val
-				}
-			case map[string]interface{}:
-				if value != nil {
-					value[key] = val
-				}
+		switch value := o.Get(keys[:length-2]...).value.(type) {
+		case Value:
+			value.Set(key, val)
+		case Array:
+			value.Set(key, val)
+		case Object:
+			if key, ok := key.(string); ok && value != nil {
+				value[key] = val
 			}
 		}
 	}
@@ -834,7 +860,12 @@ func (o Object) Interface(keys ...interface{}) interface{} {
 }
 
 func (o Object) Len(keys ...interface{}) int {
-	return len(o.Object(keys...))
+	switch len(keys) {
+	case 0:
+		return len(o)
+	default:
+		return o.Get(keys...).Len()
+	}
 }
 
 func (o Object) Keys(keys ...interface{}) []string {
@@ -879,6 +910,13 @@ func (o Object) Delete(keys ...interface{}) {
 	}
 }
 
+func (o Object) Clone(keys ...interface{}) Object {
+	var object = make(Object)
+	data, _ := json.Marshal(o.Get(keys...))
+	_ = json.Unmarshal(data, &object)
+	return object
+}
+
 func (o Object) Range(fn func(key string, value Value) (continued bool)) bool {
 	for key, val := range o {
 		if !fn(key, value(val)) {
@@ -886,11 +924,4 @@ func (o Object) Range(fn func(key string, value Value) (continued bool)) bool {
 		}
 	}
 	return true
-}
-
-func (o Object) Clone(keys ...interface{}) Object {
-	var object = make(Object)
-	data, _ := json.Marshal(o.Get(keys...))
-	_ = json.Unmarshal(data, &object)
-	return object
 }
