@@ -57,7 +57,7 @@ func main() {
 	fmt.Println("c:", c.JSONString())
 
 	name := c.Get("name")
-	fmt.Println("name:", name.ToString())
+	fmt.Println("name:", name.String())
 
 	c.Set("name", "abc")
 	fmt.Println("json:", value.JSONString())
@@ -89,7 +89,7 @@ func main() {
 	}
 
 	value.Sort(func(i, j int) bool {
-		return value.GetIndex(i).GetInt("age") < value.GetIndex(j).GetInt("age")
+		return value.Get(i).Int("age") < value.Get(j).Int("age")
 	})
 	fmt.Println("sort:", value.JSONString())
 	value.Reverse()
