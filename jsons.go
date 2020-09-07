@@ -93,6 +93,22 @@ func value(v interface{}) Value {
 	return val
 }
 
+func MysqlPath(key string, keys ...interface{}) string {
+	if len(keys) > 0 {
+		key += "'$"
+		for _, k := range keys {
+			switch k := k.(type) {
+			case int:
+				key += fmt.Sprintf(".[%d]", k)
+			case string:
+				key += fmt.Sprintf(".%s", strconv.Quote(k))
+			}
+		}
+		key += "'"
+	}
+	return key
+}
+
 func Marshal(v interface{}) ([]byte, error) {
 	return json.Marshal(v)
 }
@@ -438,6 +454,20 @@ func (v Value) Interface(keys ...interface{}) interface{} {
 	switch value := v.Get(keys...).value.(type) {
 	case Value:
 		return value.Interface()
+	case Raw:
+		return json.RawMessage(value)
+	case Bool:
+		return bool(value)
+	case Number:
+		return json.Number(value)
+	case String:
+		return string(value)
+	case Array:
+		return []interface{}(value)
+	case Object:
+		return map[string]interface{}(value)
+	case nil:
+		return nil
 	default:
 		return value
 	}
