@@ -116,4 +116,11 @@ func Test(t *testing.T) {
 	assert(!val.Exist("c", "d", "e"), "e must not exist")
 	val.Get("c", "d").Set("e", "eee")
 	assert(val.Exist("c", "d", "e"), "e must exist")
+
+	var raw = Raw("")
+	assert(!raw.Valid() && raw.IsNull())
+	raw = Raw(`null`)
+	assert(raw.Valid() && raw.IsNull())
+	raw = Raw(`0`)
+	assert(raw.Valid() && !raw.IsNull())
 }
