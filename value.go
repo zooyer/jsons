@@ -79,6 +79,26 @@ func value(v interface{}) Value {
 	return val
 }
 
+func original(value interface{}) interface{} {
+	switch v := value.(type) {
+	case Raw:
+		return json.RawMessage(v)
+	case Bool:
+		return bool(v)
+	case Number:
+		return json.Number(v)
+	case String:
+		return string(v)
+	case Array:
+		return []interface{}(v)
+	case Object:
+		return map[string]interface{}(v)
+	case Value:
+		return original(v.value)
+	}
+	return value
+}
+
 func (v Value) Value() (driver.Value, error) {
 	return json.Marshal(v.value)
 }

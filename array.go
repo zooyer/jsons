@@ -126,8 +126,9 @@ func (a Array) Sort(less func(i, j int) bool) Array {
 }
 
 func (a Array) Index(value interface{}) int {
+	value = original(value)
 	for i, v := range a {
-		if v == value {
+		if original(v) == value {
 			return i
 		}
 	}

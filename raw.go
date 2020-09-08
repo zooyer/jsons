@@ -1,6 +1,7 @@
 package jsons
 
 import (
+	"bytes"
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
@@ -43,37 +44,35 @@ func (r Raw) IsValid() bool {
 }
 
 func (r Raw) IsNull() bool {
-	if string(r) == "null" {
-		return true
-	}
-	return false
+	return r.isNull()
 }
 
 func (r Raw) IsBool() bool {
-	switch string(r) {
-	case "true", "false":
-		return true
-	}
-	return false
+	_, ok := r.isBool()
+	return ok
 }
 
 func (r Raw) IsNumber() bool {
-	return isValidNumber(string(r))
+	_, ok := r.isNumber()
+	return ok
 }
 
-/*
 func (r Raw) IsString() bool {
-
+	_, ok := r.isString()
+	return ok
 }
 
 func (r Raw) IsArray() bool {
-
+	_, ok := r.isArray()
+	return ok
 }
 
 func (r Raw) IsObject() bool {
-
+	_, ok := r.isObject()
+	return ok
 }
 
+/*
 func (r Raw) Get(keys ...interface{}) Raw {
 
 }
@@ -230,3 +229,81 @@ func (r Raw) Clone(keys ...interface{}) Raw {
 	return append(Raw{}, r...)
 }
 */
+
+func isSpace(c byte) bool {
+	return c == ' ' || c == '\t' || c == '\r' || c == '\n'
+}
+
+func trimSpace(data Raw) []byte {
+	return bytes.Trim(data, " \t\r\n")
+}
+
+func (r Raw) isNull() bool {
+	if string(trimSpace(r)) == "null" {
+		return true
+	}
+	return false
+}
+
+func (r Raw) isBool() (bool, bool) {
+	switch string(trimSpace(r)) {
+	case "true":
+		return true, true
+	case "false":
+		return false, true
+	}
+	return false, false
+}
+
+func (r Raw) isNumber() (num Number, ok bool) {
+	raw := trimSpace(r)
+	for _, c := range bytes.TrimLeft(r, "-") {
+		if c < '0' || c > '9' {
+			return
+		}
+	}
+	return Number(raw), true
+}
+
+func (r Raw) isString() (str string, ok bool) {
+	raw := trimSpace(r)
+	if len(raw) < 2 {
+		return
+	}
+	var begin bool
+	for i, c := range raw {
+		switch c {
+		case '"':
+			if !begin {
+				begin = true
+			} else {
+				// todo
+				if i != len(r)-1 {
+					return
+				}
+
+			}
+		case '\\':
+		default:
+			if c < 0x20 {
+				return
+			}
+		}
+	}
+
+	return
+}
+
+func (r Raw) isArray() (arr Raw, ok bool) {
+	return
+}
+
+func (r Raw) isObject() (obj Raw, ok bool) {
+	return
+}
+
+func init() {
+	switch "expr"[0] {
+	case ' ', '\t', '\r', '\n':
+	}
+}

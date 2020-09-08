@@ -1,6 +1,7 @@
 package jsons
 
 import (
+	"encoding/json"
 	"github.com/google/go-cmp/cmp"
 	"github.com/tj/assert"
 	"testing"
@@ -25,4 +26,11 @@ func TestRaw(t *testing.T) {
 	if diff != "" {
 		t.Fatal(diff)
 	}
+	var i int
+	if err := json.Unmarshal([]byte(`     123`), &i); err != nil {
+		t.Fatal(err)
+	}
+	t.Log(i)
+	assert.Equal(t, Raw(`123`).IsNumber(), true)
+	assert.Equal(t, Raw(` 123`).IsNumber(), true)
 }
