@@ -89,7 +89,7 @@ func main() {
 	}
 
 	value.Sort(func(i, j int) bool {
-		return value.Get(i).Int("age") < value.Get(j).Int("age")
+		return value.Int(i, "age") < value.Int(j, "age")
 	})
 	fmt.Println("sort:", value.JSONString())
 	value.Reverse()
