@@ -214,12 +214,3 @@ func (r Raw) Exist(keys ...interface{}) bool {
 	}
 	return false
 }
-
-func (r Raw) Delete(keys ...interface{}) {
-	if len(keys) > 0 {
-		var end = len(keys) - 1
-		if key, ok := keys[end].(string); ok {
-			delete(r.Object(keys[:end]...), key)
-		}
-	}
-}
