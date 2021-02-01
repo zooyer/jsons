@@ -146,3 +146,7 @@ func (a Array) Slice(begin, end int) Array {
 func (a Array) Append(arr Array) Array {
 	return append(a, arr...)
 }
+
+func (a Array) JSONString(keys ...interface{}) string {
+	return a.Get().JSONString(keys...)
+}

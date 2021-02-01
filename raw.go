@@ -214,3 +214,7 @@ func (r Raw) Exist(keys ...interface{}) bool {
 	}
 	return false
 }
+
+func (r Raw) JSONString(keys ...interface{}) string {
+	return string(r.Get(keys...))
+}
