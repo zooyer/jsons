@@ -215,6 +215,17 @@ func (r Raw) Exist(keys ...interface{}) bool {
 	return false
 }
 
+func (r Raw) JSON(keys ...interface{}) []byte {
+	data, _ := json.Marshal(r.Get(keys...))
+	return data
+}
+
+func (r Raw) JSONValue(keys ...interface{}) Value {
+	var val Value
+	_ = json.Unmarshal(r.JSON(keys...), &val)
+	return val
+}
+
 func (r Raw) JSONString(keys ...interface{}) string {
-	return string(r.Get(keys...))
+	return string(r.JSON(keys...))
 }

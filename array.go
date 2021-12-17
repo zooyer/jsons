@@ -147,6 +147,14 @@ func (a Array) Append(arr Array) Array {
 	return append(a, arr...)
 }
 
+func (a Array) JSON(keys ...interface{}) []byte {
+	return a.Get(keys...).JSON()
+}
+
+func (a Array) JSONValue(keys ...interface{}) Value {
+	return a.Get(keys...)
+}
+
 func (a Array) JSONString(keys ...interface{}) string {
-	return a.Get().JSONString(keys...)
+	return a.Get(keys...).JSONString()
 }

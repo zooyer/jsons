@@ -175,9 +175,13 @@ func (o Object) Range(fn func(key string, value Value) (continued bool)) bool {
 }
 
 func (o Object) JSON(keys ...interface{}) []byte {
-	return o.Get().JSON(keys...)
+	return o.Get(keys...).JSON()
+}
+
+func (o Object) JSONValue(keys ...interface{}) Value {
+	return o.Get(keys...)
 }
 
 func (o Object) JSONString(keys ...interface{}) string {
-	return o.Get().JSONString(keys...)
+	return o.Get(keys...).JSONString()
 }

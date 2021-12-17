@@ -24,3 +24,15 @@ func (s *String) Scan(v interface{}) error {
 
 	return errors.New("invalid scan string source")
 }
+
+func (s String) JSON() []byte {
+	return s.JSONValue().JSON()
+}
+
+func (s String) JSONValue() Value {
+	return value(s)
+}
+
+func (s String) JSONString() string {
+	return s.JSONValue().JSONString()
+}

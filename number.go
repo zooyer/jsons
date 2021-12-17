@@ -49,3 +49,15 @@ func (n Number) Uint64() (uint64, error) {
 func (n Number) String() string {
 	return json.Number(n).String()
 }
+
+func (n Number) JSON() []byte {
+	return n.JSONValue().JSON()
+}
+
+func (n Number) JSONValue() Value {
+	return value(n)
+}
+
+func (n Number) JSONString() string {
+	return n.JSONValue().JSONString()
+}
