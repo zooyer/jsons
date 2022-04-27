@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+
+	"github.com/jinzhu/gorm"
 )
 
 func value(v interface{}) Value {
@@ -117,6 +119,10 @@ func (v *Value) Scan(val interface{}) error {
 	}
 
 	return errors.New("invalid scan json source")
+}
+
+func (Value) GormDataType(gorm.Dialect) string {
+	return "json"
 }
 
 func (v Value) MarshalJSON() ([]byte, error) {

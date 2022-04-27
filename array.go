@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"sort"
+
+	"github.com/jinzhu/gorm"
 )
 
 func (a Array) Value() (driver.Value, error) {
@@ -24,6 +26,10 @@ func (a *Array) Scan(v interface{}) error {
 	}
 
 	return errors.New("invalid scan array source")
+}
+
+func (Array) GormDataType(gorm.Dialect) string {
+	return "json"
 }
 
 func (a Array) Len(keys ...interface{}) int {

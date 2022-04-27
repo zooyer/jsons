@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"strconv"
+
+	"github.com/jinzhu/gorm"
 )
 
 func (n Number) Value() (driver.Value, error) {
@@ -24,6 +26,10 @@ func (n *Number) Scan(v interface{}) error {
 	}
 
 	return errors.New("invalid scan number source")
+}
+
+func (Number) GormDataType(gorm.Dialect) string {
+	return "json"
 }
 
 func (n Number) MarshalJSON() ([]byte, error) {

@@ -4,6 +4,8 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
+
+	"github.com/jinzhu/gorm"
 )
 
 func (o Object) Value() (driver.Value, error) {
@@ -23,6 +25,10 @@ func (o *Object) Scan(v interface{}) error {
 	}
 
 	return errors.New("invalid scan object source")
+}
+
+func (Object) GormDataType(gorm.Dialect) string {
+	return "json"
 }
 
 func (o Object) Get(keys ...interface{}) (val Value) {
