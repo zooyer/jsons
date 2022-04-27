@@ -30,3 +30,19 @@ func (b *Bool) Scan(v interface{}) error {
 func (Bool) GormDataType(gorm.Dialect) string {
 	return "json"
 }
+
+func (b Bool) Bool() bool {
+	return bool(b)
+}
+
+func (b Bool) JSON() []byte {
+	return b.JSONValue().JSON()
+}
+
+func (b Bool) JSONValue() Value {
+	return value(b)
+}
+
+func (b Bool) JSONString() string {
+	return b.JSONValue().JSONString()
+}
