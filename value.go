@@ -8,7 +8,8 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
+	"gorm.io/gorm/schema"
 )
 
 func value(v interface{}) Value {
@@ -121,7 +122,7 @@ func (v *Value) Scan(val interface{}) error {
 	return errors.New("invalid scan json source")
 }
 
-func (Value) GormDataType(gorm.Dialect) string {
+func (Value) GormDBDataType(*gorm.DB, *schema.Field) string {
 	return "json"
 }
 

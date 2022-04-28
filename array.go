@@ -6,7 +6,8 @@ import (
 	"errors"
 	"sort"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
+	"gorm.io/gorm/schema"
 )
 
 func (a Array) Value() (driver.Value, error) {
@@ -28,7 +29,7 @@ func (a *Array) Scan(v interface{}) error {
 	return errors.New("invalid scan array source")
 }
 
-func (Array) GormDataType(gorm.Dialect) string {
+func (Array) GormDBDataType(*gorm.DB, *schema.Field) string {
 	return "json"
 }
 

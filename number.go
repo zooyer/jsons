@@ -6,7 +6,8 @@ import (
 	"errors"
 	"strconv"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
+	"gorm.io/gorm/schema"
 )
 
 func (n Number) Value() (driver.Value, error) {
@@ -28,7 +29,7 @@ func (n *Number) Scan(v interface{}) error {
 	return errors.New("invalid scan number source")
 }
 
-func (Number) GormDataType(gorm.Dialect) string {
+func (Number) GormDBDataType(*gorm.DB, *schema.Field) string {
 	return "json"
 }
 

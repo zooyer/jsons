@@ -4,8 +4,9 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
+	"gorm.io/gorm/schema"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 func (b Bool) Value() (driver.Value, error) {
@@ -27,7 +28,7 @@ func (b *Bool) Scan(v interface{}) error {
 	return errors.New("invalid scan bool source")
 }
 
-func (Bool) GormDataType(gorm.Dialect) string {
+func (Bool) GormDBDataType(*gorm.DB, *schema.Field) string {
 	return "json"
 }
 

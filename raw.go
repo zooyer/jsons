@@ -6,7 +6,8 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
+	"gorm.io/gorm/schema"
 )
 
 func (r Raw) Value() (driver.Value, error) {
@@ -29,7 +30,7 @@ func (r *Raw) Scan(v interface{}) error {
 	return errors.New("invalid scan raw source")
 }
 
-func (r Raw) GormDataType(gorm.Dialect) string {
+func (Raw) GormDBDataType(*gorm.DB, *schema.Field) string {
 	return "json"
 }
 
