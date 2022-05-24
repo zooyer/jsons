@@ -179,6 +179,11 @@ func (v Value) Set(keys ...interface{}) {
 	}
 }
 
+func (v Value) Raw(keys ...interface{}) Raw {
+	raw, _ := json.Marshal(v.Get(keys...).value)
+	return raw
+}
+
 func (v Value) Int(keys ...interface{}) int64 {
 	i, _ := v.Number(keys...).Int64()
 	return i

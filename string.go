@@ -32,6 +32,10 @@ func (String) GormDBDataType(*gorm.DB, *schema.Field) string {
 	return "json"
 }
 
+func (s String) Raw() Raw {
+	return s.JSONValue().Raw()
+}
+
 func (s String) JSON() []byte {
 	return s.JSONValue().JSON()
 }

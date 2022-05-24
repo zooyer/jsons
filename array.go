@@ -51,6 +51,10 @@ func (a Array) Cap(keys ...interface{}) int {
 	}
 }
 
+func (a Array) Raw(keys ...interface{}) Raw {
+	return a.JSONValue(keys...).Raw()
+}
+
 func (a Array) Set(keys ...interface{}) {
 	if length := len(keys); length > 1 {
 		key := keys[length-2]

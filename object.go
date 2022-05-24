@@ -32,6 +32,10 @@ func (Object) GormDBDataType(*gorm.DB, *schema.Field) string {
 	return "json"
 }
 
+func (o Object) Raw(keys ...interface{})Raw {
+	return o.JSONValue(keys...).Raw()
+}
+
 func (o Object) Get(keys ...interface{}) (val Value) {
 	if o == nil {
 		return

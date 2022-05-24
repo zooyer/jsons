@@ -41,6 +41,10 @@ func (n *Number) UnmarshalJSON(data []byte) error {
 	return json.Unmarshal(data, (*json.Number)(n))
 }
 
+func (n Number) Raw() Raw {
+	return n.JSONValue().Raw()
+}
+
 func (n Number) Float64() (float64, error) {
 	return json.Number(n).Float64()
 }
